@@ -126,12 +126,12 @@ std::wstring getWellKnownPixelFormatName(REFWICPixelFormatGUID guid)
         (guid == GUID_WICPixelFormat32bppBGRA) ? L"32bppBGRA"s :
         (guid == GUID_WICPixelFormat32bppPBGRA) ? L"32bppPBGRA"s :
         (guid == GUID_WICPixelFormat32bppGrayFloat) ? L"32bppGrayFloat"s :
-        (guid == GUID_WICPixelFormat32bppRGB) ? L"32bppRGB"s :
+        //(guid == GUID_WICPixelFormat32bppRGB) ? L"32bppRGB"s :
         (guid == GUID_WICPixelFormat32bppRGBA) ? L"32bppRGBA"s :
         (guid == GUID_WICPixelFormat32bppPRGBA) ? L"32bppPRGBA"s :
         (guid == GUID_WICPixelFormat48bppRGB) ? L"48bppRGB"s :
         (guid == GUID_WICPixelFormat48bppBGR) ? L"48bppBGR"s :
-        (guid == GUID_WICPixelFormat64bppRGB) ? L"64bppRGB"s :
+        //(guid == GUID_WICPixelFormat64bppRGB) ? L"64bppRGB"s :
         (guid == GUID_WICPixelFormat64bppRGBA) ? L"64bppRGBA"s :
         (guid == GUID_WICPixelFormat64bppBGRA) ? L"64bppBGRA"s :
         (guid == GUID_WICPixelFormat64bppPRGBA) ? L"64bppPRGBA"s :
@@ -141,7 +141,7 @@ std::wstring getWellKnownPixelFormatName(REFWICPixelFormatGUID guid)
         (guid == GUID_WICPixelFormat48bppRGBFixedPoint) ? L"48bppRGBFixedPoint"s :
         (guid == GUID_WICPixelFormat48bppBGRFixedPoint) ? L"48bppBGRFixedPoint"s :
         (guid == GUID_WICPixelFormat96bppRGBFixedPoint) ? L"96bppRGBFixedPoint"s :
-        (guid == GUID_WICPixelFormat96bppRGBFloat) ? L"96bppRGBFloat"s :
+        //(guid == GUID_WICPixelFormat96bppRGBFloat) ? L"96bppRGBFloat"s :
         (guid == GUID_WICPixelFormat128bppRGBAFloat) ? L"128bppRGBAFloat"s :
         (guid == GUID_WICPixelFormat128bppPRGBAFloat) ? L"128bppPRGBAFloat"s :
         (guid == GUID_WICPixelFormat128bppRGBFloat) ? L"128bppRGBFloat"s :
@@ -152,7 +152,7 @@ std::wstring getWellKnownPixelFormatName(REFWICPixelFormatGUID guid)
         (guid == GUID_WICPixelFormat128bppRGBAFixedPoint) ? L"128bppRGBAFixedPoint"s :
         (guid == GUID_WICPixelFormat128bppRGBFixedPoint) ? L"128bppRGBFixedPoint"s :
         (guid == GUID_WICPixelFormat64bppRGBAHalf) ? L"64bppRGBAHalf"s :
-        (guid == GUID_WICPixelFormat64bppPRGBAHalf) ? L"64bppPRGBAHalf"s :
+        //(guid == GUID_WICPixelFormat64bppPRGBAHalf) ? L"64bppPRGBAHalf"s :
         (guid == GUID_WICPixelFormat64bppRGBHalf) ? L"64bppRGBHalf"s :
         (guid == GUID_WICPixelFormat48bppRGBHalf) ? L"48bppRGBHalf"s :
         (guid == GUID_WICPixelFormat32bppRGBE) ? L"32bppRGBE"s :
@@ -205,6 +205,7 @@ std::wstring findModulePath(const void* address)
     auto deleter = [](HANDLE handle) { CloseHandle(handle); };
     std::unique_ptr<std::remove_pointer_t<HANDLE>, decltype(deleter)> hSnap{
         CreateToolhelp32Snapshot(TH32CS_SNAPMODULE, GetCurrentProcessId()), deleter };
+
     MODULEENTRY32 me{ sizeof(MODULEENTRY32) };
     if (Module32First(hSnap.get(), &me))
     {
@@ -212,7 +213,17 @@ std::wstring findModulePath(const void* address)
         {
             if (me.modBaseAddr <= address && address <= me.modBaseAddr + me.modBaseSize)
             {
+#if _M_IX86
+                std::unique_ptr<std::remove_pointer_t<HANDLE>, decltype(deleter)> hFile{
+                    CreateFile(me.szExePath, 0/*QUERY*/, FILE_SHARE_READ, nullptr, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, nullptr), deleter
+                };
+
+                WCHAR path[MAX_PATH*2]{};
+                GetFinalPathNameByHandle(hFile.get(), path, ARRAYSIZE(path), FILE_NAME_NORMALIZED | VOLUME_NAME_DOS);
+                return path;
+#else
                 return me.szExePath;
+#endif
             }
         } while (Module32Next(hSnap.get(), &me));
     }
@@ -670,6 +681,7 @@ void onCombobox1Selchange(HWND hwnd)
             }
         }
         SetWindowRedraw(GetDlgItem(hwnd, IDC_LIST1), TRUE);
+        //ListView_SetItemState(GetDlgItem(hwnd, IDC_LIST1), 0, LVIS_SELECTED, LVIS_SELECTED);
         g_currentlist = std::move(list);
     }
     Edit_SetText(GetDlgItem(hwnd, IDC_EDIT1), L"");
@@ -747,7 +759,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 
     InitCommonControls();
 
-    DialogBox(hInstance, MAKEINTRESOURCE(IDD_ABOUTBOX), nullptr, &dlgProc);
+    DialogBox(hInstance, MAKEINTRESOURCE(IDD_MAIN), nullptr, &dlgProc);
 
     return 0;
 }

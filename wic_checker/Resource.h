@@ -2,10 +2,8 @@
 // Microsoft Visual C++ で生成されたインクルード ファイル。
 // wic_checker.rc で使用
 //
-#define IDC_MYICON                      2
-#define IDD_WICCHECKER_DIALOG           102
 #define IDS_APP_TITLE                   103
-#define IDD_ABOUTBOX                    103
+#define IDD_MAIN                        103
 #define IDI_WICCHECKER                  107
 #define IDI_SMALL                       108
 #define IDC_WICCHECKER                  109
